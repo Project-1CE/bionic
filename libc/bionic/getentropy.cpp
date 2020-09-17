@@ -59,8 +59,8 @@ int getentropy(void* buffer, size_t buffer_size) {
 
   size_t collected = 0;
   while (collected < buffer_size) {
-    long count = TEMP_FAILURE_RETRY(getrandom(static_cast<char*>(buffer) + collected,
-                                              buffer_size - collected, GRND_NONBLOCK));
+    long count = TEMP_FAILURE_RETRY(
+        getrandom(static_cast<char*>(buffer) + collected, buffer_size - collected, GRND_NONBLOCK));
     if (count == -1) {
       // EAGAIN: there isn't enough entropy right now.
       // ENOSYS/EINVAL: getrandom(2) or GRND_NONBLOCK isn't supported.
