@@ -374,8 +374,14 @@ extern "C" const char* __scudo_get_ring_buffer_addr();
 extern "C" size_t __scudo_get_ring_buffer_size();
 extern "C" size_t __scudo_get_stack_depot_size();
 
+extern void InitNativeAllocatorDispatch(libc_globals*);
+
 // Initializes memory allocation framework once per process.
 void MallocInitImpl(libc_globals* globals) {
+#if defined(USE_MIMALLOC)
+  InitNativeAllocatorDispatch(globals);
+#endif
+
   char prop[PROP_VALUE_MAX];
   char* options = prop;
 

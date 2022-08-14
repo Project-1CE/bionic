@@ -55,6 +55,10 @@
 #include "private/bionic_tls.h"
 #include "private/KernelArgumentBlock.h"
 
+static bool starts_with(const char* s, const char* prefix) {
+  return strncmp(s, prefix, strlen(prefix)) == 0;
+}
+
 extern "C" {
   extern void netdClientInit(void);
   extern int __cxa_atexit(void (*)(void *), void *, void *);
@@ -78,6 +82,28 @@ extern "C" __attribute__((weak)) void __hwasan_library_loaded(ElfW(Addr) base,
 extern "C" __attribute__((weak)) void __hwasan_library_unloaded(ElfW(Addr) base,
                                                                 const ElfW(Phdr)* phdr,
                                                                 ElfW(Half) phnum);
+
+static void __libc_init_h_malloc(libc_globals* globals) {
+  char exe_path[256];
+  ssize_t readlink_res = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1 /* space for NUL terminator */);
+  if (readlink_res <= 0) {
+    return;
+  }
+  exe_path[readlink_res] = '\0';
+
+  bool h_malloc_disabled = false;
+
+  const bool is_art_runtime = starts_with(exe_path, "/system/bin/app_process");
+  if (is_art_runtime) {
+    h_malloc_disabled = true;
+  }
+  // libc_globals struct is write-protected
+  globals->h_malloc_disabled = h_malloc_disabled;
+}
+
+bool __libc_h_malloc_enabled() {
+  return !__libc_globals->h_malloc_disabled;
+}
 
 // We need a helper function for __libc_preinit because compiling with LTO may
 // inline functions requiring a stack protector check, but __stack_chk_guard is
@@ -110,7 +136,10 @@ static void __libc_preinit_impl() {
 #endif
 
   // Hooks for various libraries to let them know that we're starting up.
-  __libc_globals.mutate(__libc_init_malloc);
+  __libc_globals.mutate([](libc_globals* globals) {
+    __libc_init_h_malloc(globals);
+    __libc_init_malloc(globals);
+  });
 
   // Install reserved signal handlers for assisting the platform's profilers.
   __libc_init_profiling_handlers();

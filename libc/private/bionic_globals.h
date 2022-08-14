@@ -64,6 +64,8 @@ struct libc_globals {
   // limit is enabled and some other hook is enabled at the same time.
   _Atomic(const MallocDispatch*) default_dispatch_table;
   MallocDispatch malloc_dispatch_table;
+
+  bool h_malloc_disabled;
 };
 
 struct memtag_dynamic_entries_t {
@@ -177,5 +179,7 @@ __LIBC_HIDDEN__ extern void* __libc_sysinfo;
 extern "C" __LIBC_HIDDEN__ void __libc_int0x80();
 __LIBC_HIDDEN__ void __libc_init_sysinfo();
 #endif
+
+__LIBC_HIDDEN__ bool __libc_h_malloc_enabled();
 
 #endif
