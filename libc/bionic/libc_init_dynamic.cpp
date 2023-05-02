@@ -93,8 +93,12 @@ static void __libc_init_h_malloc(libc_globals* globals) {
 
   bool h_malloc_disabled = false;
 
+#define IS(prog) (!strcmp(exe_path, prog))
+  const bool is_pixel_camera_service = IS("/apex/com.google.pixel.camera.hal/bin/hw/android.hardware.camera.provider@2.7-service-google");
+#undef IS
+
   const bool is_art_runtime = starts_with(exe_path, "/system/bin/app_process");
-  if (is_art_runtime) {
+  if (is_art_runtime || is_pixel_camera_service) {
     h_malloc_disabled = true;
   }
   // libc_globals struct is write-protected
