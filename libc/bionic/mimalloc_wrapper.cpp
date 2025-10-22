@@ -31,8 +31,25 @@
 
 #include "mimalloc_wrapper.h"
 
-// Changing decay rate is not supported for now
-int mi_mallopt(int /*param*/, int /*value*/) {
+int mi_mallopt(int param, int value) {
+  if (param == M_DECAY_TIME) {
+    long decay_time_ms;
+    if (value < 0) {
+      decay_time_ms = -1;
+    } else if (value) {
+      decay_time_ms = 100;
+    } else {
+      decay_time_ms = 0;
+    }
+    mi_option_set(mi_option_purge_delay, decay_time_ms);
+    return 1;
+  }
+  else if (param == M_PURGE || param == M_PURGE_ALL) {
+    mi_collect(true);
+    return 1;
+  }
+
+  /* not implemented */
   return 0;
 }
 
