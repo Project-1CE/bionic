@@ -358,43 +358,43 @@ static constexpr MallocDispatch __libc_malloc_default_dispatch __attribute__((un
 
 #if defined(USE_MIMALLOC)
 
-#include "mimalloc-secure_wrapper.h"
-#define SecureMalloc(function)  mi_secure_ ## function
+#include "scudo.h"
+#define ScudoMalloc(function)  scudo_ ## function
 
-static constexpr MallocDispatch __secure_malloc_dispatch __attribute__((unused)) = {
-  SecureMalloc(calloc),
-  SecureMalloc(free),
-  SecureMalloc(mallinfo),
-  SecureMalloc(malloc),
-  SecureMalloc(malloc_usable_size),
-  SecureMalloc(memalign),
-  SecureMalloc(posix_memalign),
+static constexpr MallocDispatch __scudo_malloc_dispatch __attribute__((unused)) = {
+  ScudoMalloc(calloc),
+  ScudoMalloc(free),
+  ScudoMalloc(mallinfo),
+  ScudoMalloc(malloc),
+  ScudoMalloc(malloc_usable_size),
+  ScudoMalloc(memalign),
+  ScudoMalloc(posix_memalign),
 #if defined(HAVE_DEPRECATED_MALLOC_FUNCS)
-  SecureMalloc(pvalloc),
+  ScudoMalloc(pvalloc),
 #endif
-  SecureMalloc(realloc),
+  ScudoMalloc(realloc),
 #if defined(HAVE_DEPRECATED_MALLOC_FUNCS)
-  SecureMalloc(valloc),
+  ScudoMalloc(valloc),
 #endif
-  SecureMalloc(malloc_iterate),
-  SecureMalloc(malloc_disable),
-  SecureMalloc(malloc_enable),
-  SecureMalloc(mallopt),
-  SecureMalloc(aligned_alloc),
-  SecureMalloc(malloc_info),
+  ScudoMalloc(malloc_iterate),
+  ScudoMalloc(malloc_disable),
+  ScudoMalloc(malloc_enable),
+  ScudoMalloc(mallopt),
+  ScudoMalloc(aligned_alloc),
+  ScudoMalloc(malloc_info),
 };
 
 static const MallocDispatch* native_allocator_dispatch;
 
 void InitNativeAllocatorDispatch(libc_globals* globals) {
-  bool hardened_impl = __libc_h_malloc_enabled();
+  bool mi_disabled = __libc_scudo_enabled();
 
-  const MallocDispatch* table = hardened_impl ?
-    &__secure_malloc_dispatch :
+  const MallocDispatch* table = mi_disabled ?
+    &__scudo_malloc_dispatch :
     &__libc_malloc_default_dispatch;
 
-  if (hardened_impl) {
-    globals->malloc_dispatch_table = __secure_malloc_dispatch;
+  if (mi_disabled) {
+    globals->malloc_dispatch_table = __scudo_malloc_dispatch;
     globals->current_dispatch_table = &globals->malloc_dispatch_table;
     globals->default_dispatch_table = &globals->malloc_dispatch_table;
   }

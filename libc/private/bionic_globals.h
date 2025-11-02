@@ -65,7 +65,7 @@ struct libc_globals {
   _Atomic(const MallocDispatch*) default_dispatch_table;
   MallocDispatch malloc_dispatch_table;
 
-  bool h_malloc_disabled;
+  bool mi_disabled;
 };
 
 struct memtag_dynamic_entries_t {
@@ -180,6 +180,6 @@ extern "C" __LIBC_HIDDEN__ void __libc_int0x80();
 __LIBC_HIDDEN__ void __libc_init_sysinfo();
 #endif
 
-__LIBC_HIDDEN__ bool __libc_h_malloc_enabled();
+__LIBC_HIDDEN__ bool __libc_scudo_enabled();
 
 #endif

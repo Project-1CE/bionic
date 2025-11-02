@@ -55,7 +55,12 @@ __END_DECLS
 
 #else // __has_feature(hwaddress_sanitizer)
 
-#if defined(USE_SCUDO)
+#if defined(USE_MIMALLOC)
+
+#include "mimalloc_wrapper.h"
+#define Malloc(function)  mi_ ## function
+
+#elif defined(USE_SCUDO)
 
 #include "scudo.h"
 #define Malloc(function)  scudo_ ## function
@@ -64,11 +69,6 @@ __END_DECLS
 
 #include "scudo.h"
 #define Malloc(function)  scudo_svelte_ ## function
-
-#elif defined(USE_MIMALLOC)
-
-#include "mimalloc_wrapper.h"
-#define Malloc(function)  mi_ ## function
 
 #else
 

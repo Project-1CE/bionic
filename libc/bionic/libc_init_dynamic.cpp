@@ -83,7 +83,7 @@ extern "C" __attribute__((weak)) void __hwasan_library_unloaded(ElfW(Addr) base,
                                                                 const ElfW(Phdr)* phdr,
                                                                 ElfW(Half) phnum);
 
-static void __libc_init_h_malloc(libc_globals* globals) {
+static void __libc_inject_malloc(libc_globals* globals) {
   char exe_path[256];
   ssize_t readlink_res = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1 /* space for NUL terminator */);
   if (readlink_res <= 0) {
@@ -91,22 +91,21 @@ static void __libc_init_h_malloc(libc_globals* globals) {
   }
   exe_path[readlink_res] = '\0';
 
-  bool h_malloc_disabled = false;
+  bool mi_disabled = false;
 
 #define IS(prog) (!strcmp(exe_path, prog))
   const bool is_pixel_camera_service = IS("/apex/com.google.pixel.camera.hal/bin/hw/android.hardware.camera.provider@2.7-service-google");
 #undef IS
 
-  const bool is_art_runtime = starts_with(exe_path, "/system/bin/app_process");
-  if (is_art_runtime || is_pixel_camera_service) {
-    h_malloc_disabled = true;
+  if (is_pixel_camera_service) {
+    mi_disabled = true;
   }
   // libc_globals struct is write-protected
-  globals->h_malloc_disabled = h_malloc_disabled;
+  globals->mi_disabled = mi_disabled;
 }
 
-bool __libc_h_malloc_enabled() {
-  return !__libc_globals->h_malloc_disabled;
+bool __libc_scudo_enabled() {
+  return __libc_globals->mi_disabled;
 }
 
 // We need a helper function for __libc_preinit because compiling with LTO may
@@ -141,7 +140,7 @@ static void __libc_preinit_impl() {
 
   // Hooks for various libraries to let them know that we're starting up.
   __libc_globals.mutate([](libc_globals* globals) {
-    __libc_init_h_malloc(globals);
+    __libc_inject_malloc(globals);
     __libc_init_malloc(globals);
   });
 
